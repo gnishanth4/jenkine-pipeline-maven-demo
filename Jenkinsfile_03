@@ -3,6 +3,10 @@
 pipeline {
     environment {
         JAVA_TOOL_OPTIONS = "-Duser.home=/home/jenkins"
+        ArtifactId = readMavenPom().getArtifactId()
+        Version = readMavenPom().getVersion()
+        Name = readMavenPom().getName()
+        GroupId = readMavenPom().getGroupId()
     }
     agent none
 
@@ -30,6 +34,38 @@ pipeline {
         stage("Code Quality Test"){
             steps{
              echo "Code Quality checking"
+            }
+        }
+        // Stage 4 : Print some information
+        stage ('Print Environment variables'){
+                    steps {
+                        echo "Artifact ID is '${ArtifactId}'"
+                        echo "Version is '${Version}'"
+                        echo "GroupID is '${GroupId}'"
+                        echo "Name is '${Name}'"
+                    }
+                }
+        // Stage 5 Push the Artifact to Nexus Repo
+        stage("Publish Artifact"){
+            steps{
+                script {
+
+                def NexusRepo = Version.endsWith("SNAPSHOT") ? "petclinic-SNAPSHOT" : "petclinic-RELEASE"
+
+                nexusArtifactUploader artifacts: 
+                [[artifactId: "${ArtifactId}", 
+                classifier: '', 
+                file: "target/${ArtifactId}-${Version}.war", 
+                type: 'war']], 
+                credentialsId: 'Nexus_Artifact', 
+                groupId: "${GroupId}", 
+                nexusUrl: '172.20.10.140:8081', 
+                nexusVersion: 'nexus3', 
+                protocol: 'http', 
+                repository: "${NexusRepo}", 
+                version: "${Version}"
+             }
+            
             }
         }
         
