@@ -4,22 +4,34 @@ pipeline {
     environment {
         JAVA_TOOL_OPTIONS = "-Duser.home=/home/jenkins"
     }
-    agent {
-        dockerfile {
-            label "linux-mvn"
-            args "-v /tmp:/home/jenkins/.m2 -e MAVEN_CONFIG=/home/jenkins/.m2 -u root"
-        }
-    }
+    agent none
 
     stages {
-        stage("Build") {
-            steps {
-                
+        // Stage 1 build the project using maven 
+        stage("Build Project") {
+            agent {
+               dockerfile {
+                  label "linux-mvn"
+                  args "-v /tmp:/home/jenkins/.m2 -e MAVEN_CONFIG=/home/jenkins/.m2 -u root"
+              }
+           }
+            steps {               
                 sh "mvn -version"
-                sh "mvn clean install"
+                sh "mvn clean install package"
             }
         }
-    }
-
-   
+        // Stage 2 Test the project
+        stage("Test"){
+            steps{
+               echo "Testing"
+            }
+        }
+        // Stage 3 Run Sonar Analasys
+        stage("Code Quality Test"){
+            steps{
+             echo "Code Quality checking"
+            }
+        }
+        
+    }  
 }
